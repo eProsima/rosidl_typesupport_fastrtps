@@ -72,6 +72,9 @@ max_serialized_size_@(type_.name)(
   bool & full_bounded,
   bool & is_plain,
   size_t current_alignment);
+bool
+get_key_type_support_@(type_.name)(
+  message_type_support_key_callbacks_t * key_callbacks);
 }  // namespace typesupport_fastrtps_cpp
 @[      for ns in reversed(type_.namespaces)]@
 }  // namespace @(ns)
@@ -490,6 +493,16 @@ if isinstance(type_, AbstractNestedType):
   return ret_val;
 }
 
+bool
+ROSIDL_TYPESUPPORT_FASTRTPS_CPP_PUBLIC_@(package_name)
+get_key_type_support_@(message.structure.namespaced_type.name)(
+  message_type_support_key_callbacks_t * key_callbacks)
+{
+  //TODO
+  static_cast<void>(key_callbacks);
+  return false;
+}
+
 static bool _@(message.structure.namespaced_type.name)__cdr_serialize(
   const void * untyped_ros_message,
   eprosima::fastcdr::Cdr & cdr)
@@ -533,13 +546,21 @@ static size_t _@(message.structure.namespaced_type.name)__max_serialized_size(ch
   return ret_val;
 }
 
+static bool _@(message.structure.namespaced_type.name)__get_key_type_support( message_type_support_key_callbacks_t * key_callbacks)
+{
+  bool ret_val;
+  ret_val = get_key_type_support_@(message.structure.namespaced_type.name)(key_callbacks);
+  return ret_val;
+}
+
 static message_type_support_callbacks_t _@(message.structure.namespaced_type.name)__callbacks = {
   "@('::'.join([package_name] + list(interface_path.parents[0].parts)))",
   "@(message.structure.namespaced_type.name)",
   _@(message.structure.namespaced_type.name)__cdr_serialize,
   _@(message.structure.namespaced_type.name)__cdr_deserialize,
   _@(message.structure.namespaced_type.name)__get_serialized_size,
-  _@(message.structure.namespaced_type.name)__max_serialized_size
+  _@(message.structure.namespaced_type.name)__max_serialized_size,
+  _@(message.structure.namespaced_type.name)__get_key_type_support
 };
 
 static rosidl_message_type_support_t _@(message.structure.namespaced_type.name)__handle = {
