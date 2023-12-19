@@ -612,6 +612,16 @@ if isinstance(type_, AbstractNestedType):
   return current_alignment - initial_alignment;
 }
 
+bool
+ROSIDL_TYPESUPPORT_FASTRTPS_C_PUBLIC_@(package_name)
+get_key_type_support_@(message.structure.namespaced_type.name)(
+  message_type_support_key_callbacks_t * key_callbacks)
+{
+  //TODO
+  static_cast<void>(key_callbacks);
+  return false;
+}
+
 static size_t _@(message.structure.namespaced_type.name)__max_serialized_size(char & bounds_info)
 {
   bool full_bounded;
@@ -627,6 +637,13 @@ static size_t _@(message.structure.namespaced_type.name)__max_serialized_size(ch
   return ret_val;
 }
 
+static bool _@(message.structure.namespaced_type.name)__get_key_type_support(message_type_support_key_callbacks_t * key_callbacks)
+{
+  bool ret_val;
+  ret_val = get_key_type_support_@(message.structure.namespaced_type.name)(key_callbacks);
+  return ret_val;
+}
+
 @
 @# // Collect the callback functions and provide a function to get the type support struct.
 
@@ -636,7 +653,8 @@ static message_type_support_callbacks_t __callbacks_@(message.structure.namespac
   _@(message.structure.namespaced_type.name)__cdr_serialize,
   _@(message.structure.namespaced_type.name)__cdr_deserialize,
   _@(message.structure.namespaced_type.name)__get_serialized_size,
-  _@(message.structure.namespaced_type.name)__max_serialized_size
+  _@(message.structure.namespaced_type.name)__max_serialized_size,
+  _@(message.structure.namespaced_type.name)__get_key_type_support
 };
 
 static rosidl_message_type_support_t _@(message.structure.namespaced_type.name)__type_support = {
