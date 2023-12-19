@@ -49,6 +49,8 @@ header_files = [
 @[    end if]@
 #include "@(header_file)"
 @[end for]@
+
+struct message_type_support_key_callbacks_t;
 @[for ns in message.structure.namespaced_type.namespaces]@
 
 namespace @(ns)
@@ -82,6 +84,11 @@ max_serialized_size_@(message.structure.namespaced_type.name)(
   bool & full_bounded,
   bool & is_plain,
   size_t current_alignment);
+
+bool
+ROSIDL_TYPESUPPORT_FASTRTPS_CPP_PUBLIC_@(package_name)
+get_key_type_support_@(message.structure.namespaced_type.name)(
+  message_type_support_key_callbacks_t * key_callbacks);
 
 }  // namespace typesupport_fastrtps_cpp
 @[  for ns in reversed(message.structure.namespaced_type.namespaces)]@
