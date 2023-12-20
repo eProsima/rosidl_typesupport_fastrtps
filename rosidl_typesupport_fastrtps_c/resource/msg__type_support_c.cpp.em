@@ -649,9 +649,14 @@ ROSIDL_TYPESUPPORT_FASTRTPS_C_PUBLIC_@(package_name)
 get_key_type_support_@(message.structure.namespaced_type.name)(
   message_type_support_key_callbacks_t * key_callbacks)
 {
-  //TODO
-  static_cast<void>(key_callbacks);
-  return false;
+@[  if message.structure.has_any_member_with_annotation('key') ]@
+    //TODO
+    static_cast<void>(key_callbacks);
+    return true;
+@[  else]@
+    static_cast<void>(key_callbacks);
+    return false;
+@[  end if]@
 }
 
 static size_t _@(message.structure.namespaced_type.name)__max_serialized_size(char & bounds_info)
