@@ -49,32 +49,24 @@ typedef struct message_type_support_key_callbacks_t
     eprosima::fastcdr::Cdr & cdr,
     void * untyped_ros_message);
 
-  /// Callback function for retrieving the key hash
-  /**
-   * \param [in] capacity The desired hash size that tha buffer is meant to have allocated.
-   * \param [in] force_md5 Whether to force md5 checksum.
-   * \param [in, out] length The number of bytes written in the buffer.
-   * \param [in, out] buffer The buffer where to store the hash.
-   */
-  void (* get_key_hash)(
-    size_t capacity,
-    bool force_md5,
-    size_t* length,
-    uint8_t* buffer);
-
   /// Callback function to get size of the key data
   /**
    * \return The size of the serialized message in bytes.
    */
-  uint32_t (* get_serialized_key_size)(
-    const void * untyped_ros_message);
+  size_t (* get_serialized_key_size)(
+    const void * untyped_ros_message,
+    size_t initial_alignment);
 
   /// Callback function to determine the maximum size needed for key serialization,
   /// which is used for key type support initialization.
   /**
+   * \param [in] initial_alignment Initial alignment to be incrementally calculated.
+   * \param [in,out] is_unbounded Whether the key has any unbounded member.
    * \return The maximum key serialized size, in bytes.
    */
-  size_t (* max_serialized_key_size)();
+  size_t (* max_serialized_key_size)(
+    size_t initial_aligment,
+    bool & is_unbounded);
 
 } message_type_support_key_callbacks_t;
 
