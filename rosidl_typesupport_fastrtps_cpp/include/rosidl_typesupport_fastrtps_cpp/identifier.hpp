@@ -24,6 +24,10 @@ namespace rosidl_typesupport_fastrtps_cpp
 ROSIDL_TYPESUPPORT_FASTRTPS_CPP_IMPORT
 extern const char * typesupport_identifier;
 
+/// String identifier specific to `rosidl_typesupport_fastrtps_cpp_v2`.
+ROSIDL_TYPESUPPORT_FASTRTPS_CPP_IMPORT
+extern const char * typesupport_identifier_v2;
+
 }  // namespace rosidl_typesupport_fastrtps_cpp
 
 #endif  // ROSIDL_TYPESUPPORT_FASTRTPS_CPP__IDENTIFIER_HPP_
