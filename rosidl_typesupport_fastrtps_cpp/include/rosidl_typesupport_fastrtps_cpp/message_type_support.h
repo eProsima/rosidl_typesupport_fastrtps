@@ -121,14 +121,9 @@ typedef struct message_type_support_callbacks_t
    */
   size_t (* max_serialized_size)(char & bounds_info);
 
-  /// Checks whether the type has keys, filling the incoming argument
-  /// with the corresponding callbacks when true.
-  /**
-   * \param [in,out] key_callbacks Associated struct of key callbacks.
-   *                               It is filled only if the type is keyed.
-   * \return True if the type has a key.
-   */
-  bool (* get_key_type_support)(message_type_support_key_callbacks_t * key_callbacks);
+  /// Pointer to the message_type_support_key_callbacks_t.
+  /// Nullptr if the type is not keyed.
+  message_type_support_key_callbacks_t * key_callbacks;
 
 } message_type_support_callbacks_t;
 

@@ -644,14 +644,15 @@ if isinstance(type_, AbstractNestedType):
   return ret_val;
 }
 
+@[  if message.structure.has_any_member_with_annotation('key') ]@
+static
 size_t
-ROSIDL_TYPESUPPORT_FASTRTPS_C_PUBLIC_@(package_name)
 _@(message.structure.namespaced_type.name)__max_serialized_key_size(
   size_t initial_alignment,
   bool & is_unbounded)
 {
-@[  if message.structure.has_any_member_with_annotation('key') ]@
   size_t current_alignment = initial_alignment;
+  is_unbounded = false;
 
   const size_t padding = 4;
   const size_t wchar_size = 4;
@@ -728,15 +729,10 @@ if isinstance(type_, AbstractNestedType):
 @[end for]@
 
   return current_alignment - initial_alignment;
-@[  else]@
-  static_cast<void>(initial_alignment);
-  static_cast<void>(is_unbounded);
-  return static_cast<size_t>(0);
-@[  end if]@
 }
 
+static
 bool
-ROSIDL_TYPESUPPORT_FASTRTPS_C_PUBLIC_@(package_name)
 _@(message.structure.namespaced_type.name)__cdr_deserialize_key(
   eprosima::fastcdr::Cdr &,
   void *)
@@ -744,13 +740,12 @@ _@(message.structure.namespaced_type.name)__cdr_deserialize_key(
   return false;
 }
 
+static
 bool
-ROSIDL_TYPESUPPORT_FASTRTPS_C_PUBLIC_@(package_name)
 _@(message.structure.namespaced_type.name)__cdr_serialize_key(
   const void * untyped_ros_message,
   eprosima::fastcdr::Cdr & cdr)
 {
-@[  if message.structure.has_any_member_with_annotation('key') ]@
 if (!untyped_ros_message) {
     fprintf(stderr, "ros message handle is null\n");
     return false;
@@ -868,20 +863,14 @@ if isinstance(type_, AbstractNestedType):
 
 @[end for]@
   return true;
-@[  else]@
-  static_cast<void>(untyped_ros_message);
-  static_cast<void>(cdr);
-  return false;
-@[  end if]@
 }
 
+static
 size_t
-ROSIDL_TYPESUPPORT_FASTRTPS_C_PUBLIC_@(package_name)
 _@(message.structure.namespaced_type.name)__get_serialized_key_size(
   const void * untyped_ros_message,
   size_t initial_alignment)
 {
-@[  if message.structure.has_any_member_with_annotation('key') ]@
   auto ros_message =
     static_cast<const _@(message.structure.namespaced_type.name)__ros_msg_type *>(
     untyped_ros_message);
@@ -957,30 +946,15 @@ _@(message.structure.namespaced_type.name)__get_serialized_key_size(
 @[end for]@
 
   return current_alignment - initial_alignment;
-@[  else]@
-    static_cast<void>(untyped_ros_message);
-    static_cast<void>(initial_alignment);
-    return static_cast<size_t>(0);
-@[  end if]@
 }
 
-bool
-ROSIDL_TYPESUPPORT_FASTRTPS_C_PUBLIC_@(package_name)
-get_key_type_support_@(message.structure.namespaced_type.name)(
-  message_type_support_key_callbacks_t * key_callbacks)
-{
-  std::cout << "Initializing C interface @(message.structure.namespaced_type.name)" << std::endl;
-@[  if message.structure.has_any_member_with_annotation('key') ]@
-  key_callbacks->max_serialized_key_size = &_@(message.structure.namespaced_type.name)__max_serialized_key_size;
-  key_callbacks->cdr_deserialize_key = &_@(message.structure.namespaced_type.name)__cdr_deserialize_key;
-  key_callbacks->cdr_serialize_key = &_@(message.structure.namespaced_type.name)__cdr_serialize_key;
-  key_callbacks->get_serialized_key_size = &_@(message.structure.namespaced_type.name)__get_serialized_key_size;
-  return true;
-@[  else]@
-  static_cast<void>(key_callbacks);
-  return false;
+static message_type_support_key_callbacks_t __key_callbacks_@(message.structure.namespaced_type.name) = {
+  _@(message.structure.namespaced_type.name)__cdr_serialize_key,
+  _@(message.structure.namespaced_type.name)__cdr_deserialize_key,
+  _@(message.structure.namespaced_type.name)__get_serialized_key_size,
+  _@(message.structure.namespaced_type.name)__max_serialized_key_size,
+};
 @[  end if]@
-}
 
 static size_t _@(message.structure.namespaced_type.name)__max_serialized_size(char & bounds_info)
 {
@@ -997,13 +971,6 @@ static size_t _@(message.structure.namespaced_type.name)__max_serialized_size(ch
   return ret_val;
 }
 
-static bool _@(message.structure.namespaced_type.name)__get_key_type_support(message_type_support_key_callbacks_t * key_callbacks)
-{
-  bool ret_val;
-  ret_val = get_key_type_support_@(message.structure.namespaced_type.name)(key_callbacks);
-  return ret_val;
-}
-
 @
 @# // Collect the callback functions and provide a function to get the type support struct.
 
@@ -1014,11 +981,15 @@ static message_type_support_callbacks_t __callbacks_@(message.structure.namespac
   _@(message.structure.namespaced_type.name)__cdr_deserialize,
   _@(message.structure.namespaced_type.name)__get_serialized_size,
   _@(message.structure.namespaced_type.name)__max_serialized_size,
-  _@(message.structure.namespaced_type.name)__get_key_type_support
+@[  if message.structure.has_any_member_with_annotation('key') ]@
+  &__key_callbacks_@(message.structure.namespaced_type.name)
+@[  else]@
+  nullptr
+@[  end if]@
 };
 
 static rosidl_message_type_support_t _@(message.structure.namespaced_type.name)__type_support = {
-  rosidl_typesupport_fastrtps_c__identifier,
+  rosidl_typesupport_fastrtps_c__identifier_v2,
   &__callbacks_@(message.structure.namespaced_type.name),
   get_message_typesupport_handle_function,
   &@(idl_structure_type_to_c_typename(message.structure.namespaced_type))__@(GET_HASH_FUNC),
