@@ -72,9 +72,6 @@ max_serialized_size_@(type_.name)(
   bool & full_bounded,
   bool & is_plain,
   size_t current_alignment);
-bool
-get_key_type_support_@(type_.name)(
-  message_type_support_key_callbacks_t * key_callbacks);
 }  // namespace typesupport_fastrtps_cpp
 @[      for ns in reversed(type_.namespaces)]@
 }  // namespace @(ns)
