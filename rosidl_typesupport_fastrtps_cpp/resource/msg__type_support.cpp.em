@@ -72,6 +72,20 @@ max_serialized_size_@(type_.name)(
   bool & full_bounded,
   bool & is_plain,
   size_t current_alignment);
+bool cdr_serialize_key(
+  const @('::'.join(type_.namespaced_name())) &,
+  eprosima::fastcdr::Cdr &);
+bool cdr_deserialize_key(
+  eprosima::fastcdr::Cdr &,
+  @('::'.join(type_.namespaced_name())) &);
+size_t get_serialized_size_key(
+  const @('::'.join(type_.namespaced_name())) &,
+  size_t current_alignment);
+size_t
+max_serialized_size_key_@(type_.name)(
+  bool & full_bounded,
+  bool & is_plain,
+  size_t current_alignment);
 }  // namespace typesupport_fastrtps_cpp
 @[      for ns in reversed(type_.namespaces)]@
 }  // namespace @(ns)
