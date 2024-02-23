@@ -400,6 +400,92 @@ get_serialized_size(
   return current_alignment - initial_alignment;
 }
 
+@{
+def generate_member_for_max_serialized_size(member, suffix):
+  from rosidl_generator_cpp import msg_type_only_to_cpp
+  from rosidl_generator_cpp import msg_type_to_cpp
+  from rosidl_parser.definition import AbstractGenericString
+  from rosidl_parser.definition import AbstractNestedType
+  from rosidl_parser.definition import AbstractSequence
+  from rosidl_parser.definition import AbstractWString
+  from rosidl_parser.definition import Array
+  from rosidl_parser.definition import BasicType
+  from rosidl_parser.definition import BoundedSequence
+  from rosidl_parser.definition import NamespacedType
+  strlist = []
+  strlist.append('// Member: %s' % (member.name))
+  strlist.append('{')
+
+  if isinstance(member.type, AbstractNestedType):
+    if isinstance(member.type, Array):
+      strlist.append('  size_t array_size = %d;' % (member.type.size))
+    elif isinstance(member.type, BoundedSequence):
+      strlist.append('  size_t array_size = %d;' % (member.type.maximum_size))
+    else:
+      strlist.append('  size_t array_size = 0;')
+      strlist.append('  full_bounded = false;')
+    if isinstance(member.type, AbstractSequence):
+      strlist.append('  is_plain = false;')
+      strlist.append('  current_alignment += padding +')
+      strlist.append('    eprosima::fastcdr::Cdr::alignment(current_alignment, padding);')
+  else:
+    strlist.append('  size_t array_size = 1;')
+
+  type_ = member.type
+  if isinstance(type_, AbstractNestedType):
+    type_ = type_.value_type
+
+  if isinstance(type_, AbstractGenericString):
+    strlist.append('  full_bounded = false;')
+    strlist.append('  is_plain = false;')
+    strlist.append('  for (size_t index = 0; index < array_size; ++index) {')
+    strlist.append('    current_alignment += padding +')
+    strlist.append('      eprosima::fastcdr::Cdr::alignment(current_alignment, padding) + ')
+    if type_.has_maximum_size():
+      if isinstance(type_, AbstractWString):
+        strlist.append('      wchar_size *')
+      strlist.append('    %d +' % (type_.maximum_size))
+    if isinstance(type_, AbstractWString):
+      strlist.append('      wchar_size *')
+    strlist.append('      1;')
+    strlist.append('  }')
+  elif isinstance(type_, BasicType):
+    if type_.typename in ('boolean', 'octet', 'char', 'uint8', 'int8'):
+      strlist.append('  last_member_size = array_size * sizeof(uint8_t);')
+      strlist.append('  current_alignment += array_size * sizeof(uint8_t);')
+    elif type_.typename in ('wchar', 'int16', 'uint16'):
+      strlist.append('  last_member_size = array_size * sizeof(uint16_t);')
+      strlist.append('  current_alignment += array_size * sizeof(uint16_t) +')
+      strlist.append('    eprosima::fastcdr::Cdr::alignment(current_alignment, sizeof(uint16_t));')
+    elif type_.typename in ('int32', 'uint32', 'float'):
+      strlist.append('  last_member_size = array_size * sizeof(uint32_t);')
+      strlist.append('  current_alignment += array_size * sizeof(uint32_t) +')
+      strlist.append('    eprosima::fastcdr::Cdr::alignment(current_alignment, sizeof(uint32_t));')
+    elif type_.typename in ('int64', 'uint64', 'double'):
+      strlist.append('  last_member_size = array_size * sizeof(uint64_t);')
+      strlist.append('  current_alignment += array_size * sizeof(uint64_t) +')
+      strlist.append('    eprosima::fastcdr::Cdr::alignment(current_alignment, sizeof(uint64_t));')
+    elif type_.typename == 'long double':
+      strlist.append('  last_member_size = array_size * sizeof(long double);')
+      strlist.append('  current_alignment += array_size * sizeof(long double) +')
+      strlist.append('    eprosima::fastcdr::Cdr::alignment(current_alignment, sizeof(long double));')
+  else:
+    strlist.append('  last_member_size = 0;')
+    strlist.append('  for (size_t index = 0; index < array_size; ++index) {')
+    strlist.append('    bool inner_full_bounded;')
+    strlist.append('    bool inner_is_plain;')
+    strlist.append('    size_t inner_size =')
+    strlist.append('      %s::typesupport_fastrtps_cpp::max_serialized_size%s_%s(' % (('::'.join(type_.namespaces)), suffix, type_.name))
+    strlist.append('      inner_full_bounded, inner_is_plain, current_alignment);')
+    strlist.append('    last_member_size += inner_size;')
+    strlist.append('    current_alignment += inner_size;')
+    strlist.append('    full_bounded &= inner_full_bounded;')
+    strlist.append('    is_plain &= inner_is_plain;')
+    strlist.append('  }')
+  strlist.append('}')
+  return strlist
+}@
+
 size_t
 ROSIDL_TYPESUPPORT_FASTRTPS_CPP_PUBLIC_@(package_name)
 max_serialized_size_@(message.structure.namespaced_type.name)(
@@ -445,7 +531,6 @@ last_member_name_ = member.name
       last_member_size
       ) == ret_val;
   }
-
 @[end if]@
   return ret_val;
 }
@@ -495,57 +580,55 @@ get_serialized_size_key(
   return current_alignment - initial_alignment;
 }
 
+size_t
+ROSIDL_TYPESUPPORT_FASTRTPS_CPP_PUBLIC_@(package_name)
+max_serialized_size_key_@(message.structure.namespaced_type.name)(
+  bool & full_bounded,
+  bool & is_plain,
+  size_t current_alignment)
+{
+  size_t initial_alignment = current_alignment;
+
+  const size_t padding = 4;
+  const size_t wchar_size = 4;
+  size_t last_member_size = 0;
+  (void)last_member_size;
+  (void)padding;
+  (void)wchar_size;
+
+  full_bounded = true;
+  is_plain = true;
+
 @{
-type_ = member.type
-if isinstance(type_, AbstractNestedType):
-    type_ = type_.value_type
+last_member_name_ = None
 }@
-@[  if isinstance(type_, AbstractGenericString)]@
-    is_unbounded = true;
-    const size_t padding = 4;
-    const size_t wchar_size = 4;
-
-    for (size_t index = 0; index < array_size; ++index) {
-      current_alignment += padding +
-        eprosima::fastcdr::Cdr::alignment(current_alignment, padding) +
-@[    if type_.has_maximum_size()]@
-@[      if isinstance(type_, AbstractWString)]@
-        wchar_size *
-@[      end if]@
-        @(type_.maximum_size) +
-@[    end if]@
-@[    if isinstance(type_, AbstractWString)]@
-        wchar_size *
-@[    end if]@
-        1;
-    }
-@[  elif isinstance(type_, BasicType)]@
-@[    if type_.typename in ('boolean', 'octet', 'char', 'uint8', 'int8')]@
-    current_alignment += array_size * sizeof(uint8_t);
-@[    elif type_.typename in ('wchar', 'int16', 'uint16')]@
-    current_alignment += array_size * sizeof(uint16_t) +
-      eprosima::fastcdr::Cdr::alignment(current_alignment, sizeof(uint16_t));
-@[    elif type_.typename in ('int32', 'uint32', 'float')]@
-    current_alignment += array_size * sizeof(uint32_t) +
-      eprosima::fastcdr::Cdr::alignment(current_alignment, sizeof(uint32_t));
-@[    elif type_.typename in ('int64', 'uint64', 'double')]@
-    current_alignment += array_size * sizeof(uint64_t) +
-      eprosima::fastcdr::Cdr::alignment(current_alignment, sizeof(uint64_t));
-@[    elif type_.typename == 'long double']@
-    current_alignment += array_size * sizeof(long double) +
-      eprosima::fastcdr::Cdr::alignment(current_alignment, sizeof(long double));
-@[    end if]@
-@[  else]
-    for (size_t index = 0; index < array_size; ++index) {
-      current_alignment +=
-        @('::'.join(type_.namespaces))::typesupport_fastrtps_cpp::_@(message.structure.namespaced_type.name)__max_serialized_key_size(
-        current_alignment, is_unbounded);
-    }
+@[for member in message.structure.members]@
+@{
+last_member_name_ = member.name
+}@
+@[  if not member.has_annotation('key') and message.structure.has_any_member_with_annotation('key')]@
+@[  continue]@
 @[  end if]@
-  }
-@[end for]@
+@[  for line in generate_member_for_max_serialized_size(member, '_key')]@
+  @(line)
+@[  end for]@
 
-  return current_alignment - initial_alignment;
+@[end for]@
+  size_t ret_val = current_alignment - initial_alignment;
+@[if last_member_name_ is not None]@
+  if (is_plain) {
+    // All members are plain, and type is not empty.
+    // We still need to check that the in-memory alignment
+    // is the same as the CDR mandated alignment.
+    using DataType = @('::'.join([package_name] + list(interface_path.parents[0].parts) + [message.structure.namespaced_type.name]));
+    is_plain =
+      (
+      offsetof(DataType, @(last_member_name_)) +
+      last_member_size
+      ) == ret_val;
+  }
+@[end if]@
+  return ret_val;
 }
 
 @[  if message.structure.has_any_member_with_annotation('key') ]@
@@ -670,53 +753,20 @@ _@(message.structure.namespaced_type.name)__get_serialized_size_key(
   return static_cast<uint32_t>(get_serialized_size_key(*typed_message, initial_alignment));
 }
 
-    current_alignment += padding +
-      eprosima::fastcdr::Cdr::alignment(current_alignment, padding);
-@[    end if]@
-@[    if isinstance(member.type.value_type, AbstractGenericString)]@
-    for (size_t index = 0; index < array_size; ++index) {
-      current_alignment += padding +
-        eprosima::fastcdr::Cdr::alignment(current_alignment, padding) +
-@[      if isinstance(member.type.value_type, AbstractWString)]@
-        wchar_size *
-@[      end if]@
-        (ros_message->@(member.name)[index].size() + 1);
-    }
-@[    elif isinstance(member.type.value_type, BasicType)]@
-    size_t item_size = sizeof(ros_message->@(member.name)[0]);
-    current_alignment += array_size * item_size +
-      eprosima::fastcdr::Cdr::alignment(current_alignment, item_size);
-@[    else]
-    for (size_t index = 0; index < array_size; ++index) {
-      current_alignment +=
-        @('::'.join(member.type.value_type.namespaces))::typesupport_fastrtps_cpp::_@(message.structure.namespaced_type.name)__get_serialized_key_size(
-        ros_message->@(member.name)[index], current_alignment);
-    }
-@[    end if]@
-  }
-@[  else]@
-@[    if isinstance(member.type, AbstractGenericString)]@
-  current_alignment += padding +
-    eprosima::fastcdr::Cdr::alignment(current_alignment, padding) +
-@[      if isinstance(member.type, AbstractWString)]@
-    wchar_size *
-@[      end if]@
-    (ros_message->@(member.name).size() + 1);
-@[    elif isinstance(member.type, BasicType)]@
-  {
-    size_t item_size = sizeof(ros_message->@(member.name));
-    current_alignment += item_size +
-      eprosima::fastcdr::Cdr::alignment(current_alignment, item_size);
-  }
-@[    else]
-  current_alignment +=
-    @('::'.join(member.type.namespaces))::typesupport_fastrtps_cpp::_@(message.structure.namespaced_type.name)__get_serialized_key_size(
-    ros_message->@(member.name), current_alignment);
-@[    end if]@
-@[  end if]@
-@[end for]@
+static size_t _@(message.structure.namespaced_type.name)__max_serialized_size_key(
+  size_t current_alignment,
+  bool & is_unbounded)
+{
+  bool full_bounded = true;
+  bool is_plain = true;
 
-  return current_alignment - initial_alignment;
+  size_t ret_val = max_serialized_size_key_@(message.structure.namespaced_type.name)(
+    full_bounded,
+    is_plain,
+    current_alignment);
+
+  is_unbounded = !full_bounded;
+  return ret_val;
 }
 
 static message_type_support_key_callbacks_t _@(message.structure.namespaced_type.name)__key_callbacks = {
