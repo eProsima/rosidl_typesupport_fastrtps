@@ -53,7 +53,7 @@ typedef struct message_type_support_key_callbacks_t
   /**
    * \return The size of the serialized message in bytes.
    */
-  size_t (* get_serialized_key_size)(
+  size_t (* get_serialized_size_key)(
     const void * untyped_ros_message,
     size_t initial_alignment);
 
@@ -64,7 +64,7 @@ typedef struct message_type_support_key_callbacks_t
    * \param [in,out] is_unbounded Whether the key has any unbounded member.
    * \return The maximum key serialized size, in bytes.
    */
-  size_t (* max_serialized_key_size)(
+  size_t (* max_serialized_size_key)(
     size_t initial_aligment,
     bool & is_unbounded);
 
