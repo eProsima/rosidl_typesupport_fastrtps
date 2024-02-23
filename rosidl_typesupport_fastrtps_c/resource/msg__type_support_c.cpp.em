@@ -154,6 +154,21 @@ size_t max_serialized_size_@('__'.join(key))(
 @[  if key[0] != package_name]@
 ROSIDL_TYPESUPPORT_FASTRTPS_C_IMPORT_@(package_name)
 @[  end if]@
+size_t get_serialized_size_key_@('__'.join(key))(
+  const void * untyped_ros_message,
+  size_t current_alignment);
+
+@[  if key[0] != package_name]@
+ROSIDL_TYPESUPPORT_FASTRTPS_C_IMPORT_@(package_name)
+@[  end if]@
+size_t max_serialized_size_key_@('__'.join(key))(
+  bool & full_bounded,
+  bool & is_plain,
+  size_t current_alignment);
+
+@[  if key[0] != package_name]@
+ROSIDL_TYPESUPPORT_FASTRTPS_C_IMPORT_@(package_name)
+@[  end if]@
 const rosidl_message_type_support_t *
   ROSIDL_TYPESUPPORT_INTERFACE__MESSAGE_SYMBOL_NAME(rosidl_typesupport_fastrtps_c, @(', '.join(key)))();
 @[end for]@
