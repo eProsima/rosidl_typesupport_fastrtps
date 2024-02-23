@@ -738,6 +738,7 @@ _@(message.structure.namespaced_type.name)__cdr_deserialize_key(
 {
   return false;
 }
+@[  end if]@
 
 ROSIDL_TYPESUPPORT_FASTRTPS_C_PUBLIC_@(package_name)
 size_t get_serialized_size_key_@('__'.join([package_name] + list(interface_path.parents[0].parts) + [message.structure.namespaced_type.name]))(
