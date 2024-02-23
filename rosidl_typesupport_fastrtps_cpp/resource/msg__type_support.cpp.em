@@ -311,6 +311,73 @@ cdr_deserialize(
   return true;
 }
 
+@{
+def generate_member_for_get_serialized_size(member, suffix):
+  from rosidl_generator_cpp import msg_type_only_to_cpp
+  from rosidl_generator_cpp import msg_type_to_cpp
+  from rosidl_parser.definition import AbstractGenericString
+  from rosidl_parser.definition import AbstractNestedType
+  from rosidl_parser.definition import AbstractSequence
+  from rosidl_parser.definition import AbstractWString
+  from rosidl_parser.definition import Array
+  from rosidl_parser.definition import BasicType
+  from rosidl_parser.definition import BoundedSequence
+  from rosidl_parser.definition import NamespacedType
+  strlist = []
+  strlist.append('// Member: %s' % (member.name))
+
+  if isinstance(member.type, AbstractNestedType):
+    strlist.append('{')
+    if isinstance(member.type, Array):
+      strlist.append('  size_t array_size = %d;' % (member.type.size))
+    else:
+      strlist.append('  size_t array_size = ros_message.%s.size();' % (member.name))
+      if isinstance(member.type, BoundedSequence):
+        strlist.append('  if (array_size > %d) {' % (member.type.maximum_size))
+        strlist.append('    throw std::runtime_error("array size exceeds upper bound");')
+        strlist.append('  }')
+      strlist.append('  current_alignment += padding +')
+      strlist.append('    eprosima::fastcdr::Cdr::alignment(current_alignment, padding);')
+    if isinstance(member.type.value_type, AbstractGenericString):
+      strlist.append('  for (size_t index = 0; index < array_size; ++index) {')
+      strlist.append('    current_alignment += padding +')
+      strlist.append('      eprosima::fastcdr::Cdr::alignment(current_alignment, padding) +')
+      if isinstance(member.type.value_type, AbstractWString):
+        strlist.append('      wchar_size *')
+      strlist.append('      (ros_message.%s[index].size() + 1);' % (member.name))
+      strlist.append('  }')
+    elif isinstance(member.type.value_type, BasicType):
+      strlist.append('  size_t item_size = sizeof(ros_message.%s[0]);' % (member.name))
+      strlist.append('  current_alignment += array_size * item_size +')
+      strlist.append('    eprosima::fastcdr::Cdr::alignment(current_alignment, item_size);')
+    else:
+      strlist.append('  for (size_t index = 0; index < array_size; ++index) {')
+      strlist.append('    current_alignment +=')
+      strlist.append('      %s::typesupport_fastrtps_cpp::get_serialized_size%s(' % (('::'.join(member.type.value_type.namespaces)), suffix))
+      strlist.append('      ros_message.%s[index], current_alignment);' % (member.name))
+      strlist.append('  }')
+    strlist.append('}')
+  else:
+    if isinstance(member.type, AbstractGenericString):
+      strlist.append('current_alignment += padding +')
+      strlist.append('  eprosima::fastcdr::Cdr::alignment(current_alignment, padding) +')
+      if isinstance(member.type, AbstractWString):
+        strlist.append('  wchar_size *')
+      strlist.append('  (ros_message.%s.size() + 1);' % (member.name))
+    elif isinstance(member.type, BasicType):
+      strlist.append('{')
+      strlist.append('  size_t item_size = sizeof(ros_message.%s);' % (member.name))
+      strlist.append('  current_alignment += item_size +')
+      strlist.append('    eprosima::fastcdr::Cdr::alignment(current_alignment, item_size);')
+      strlist.append('}')
+    else:
+      strlist.append('current_alignment +=')
+      strlist.append('  %s::typesupport_fastrtps_cpp::get_serialized_size%s(' % (('::'.join(member.type.namespaces)), suffix))
+      strlist.append('  ros_message.%s, current_alignment);' % (member.name))
+
+  return strlist;
+}@
+
 size_t
 ROSIDL_TYPESUPPORT_FASTRTPS_CPP_PUBLIC_@(package_name)
 get_serialized_size(
@@ -325,65 +392,11 @@ get_serialized_size(
   (void)wchar_size;
 
 @[for member in message.structure.members]@
-  // Member: @(member.name)
-@[  if isinstance(member.type, AbstractNestedType)]@
-  {
-@[    if isinstance(member.type, Array)]@
-    size_t array_size = @(member.type.size);
-@[    else]@
-    size_t array_size = ros_message.@(member.name).size();
-@[      if isinstance(member.type, BoundedSequence)]@
-    if (array_size > @(member.type.maximum_size)) {
-      throw std::runtime_error("array size exceeds upper bound");
-    }
-@[      end if]@
+@[  for line in generate_member_for_get_serialized_size(member, '')]@
+  @(line)
+@[  end for]@
 
-    current_alignment += padding +
-      eprosima::fastcdr::Cdr::alignment(current_alignment, padding);
-@[    end if]@
-@[    if isinstance(member.type.value_type, AbstractGenericString)]@
-    for (size_t index = 0; index < array_size; ++index) {
-      current_alignment += padding +
-        eprosima::fastcdr::Cdr::alignment(current_alignment, padding) +
-@[      if isinstance(member.type.value_type, AbstractWString)]@
-        wchar_size *
-@[      end if]@
-        (ros_message.@(member.name)[index].size() + 1);
-    }
-@[    elif isinstance(member.type.value_type, BasicType)]@
-    size_t item_size = sizeof(ros_message.@(member.name)[0]);
-    current_alignment += array_size * item_size +
-      eprosima::fastcdr::Cdr::alignment(current_alignment, item_size);
-@[    else]
-    for (size_t index = 0; index < array_size; ++index) {
-      current_alignment +=
-        @('::'.join(member.type.value_type.namespaces))::typesupport_fastrtps_cpp::get_serialized_size(
-        ros_message.@(member.name)[index], current_alignment);
-    }
-@[    end if]@
-  }
-@[  else]@
-@[    if isinstance(member.type, AbstractGenericString)]@
-  current_alignment += padding +
-    eprosima::fastcdr::Cdr::alignment(current_alignment, padding) +
-@[      if isinstance(member.type, AbstractWString)]@
-    wchar_size *
-@[      end if]@
-    (ros_message.@(member.name).size() + 1);
-@[    elif isinstance(member.type, BasicType)]@
-  {
-    size_t item_size = sizeof(ros_message.@(member.name));
-    current_alignment += item_size +
-      eprosima::fastcdr::Cdr::alignment(current_alignment, item_size);
-  }
-@[    else]
-  current_alignment +=
-    @('::'.join(member.type.namespaces))::typesupport_fastrtps_cpp::get_serialized_size(
-    ros_message.@(member.name), current_alignment);
-@[    end if]@
-@[  end if]@
 @[end for]@
-
   return current_alignment - initial_alignment;
 }
 
@@ -458,34 +471,29 @@ cdr_serialize_key(
 @[  if message.structure.has_any_member_with_annotation('key') ]@
 static
 size_t
-_@(message.structure.namespaced_type.name)__max_serialized_key_size(
-  size_t initial_alignment,
-  bool & is_unbounded)
+ROSIDL_TYPESUPPORT_FASTRTPS_CPP_PUBLIC_@(package_name)
+get_serialized_size_key(
+  const @('::'.join([package_name] + list(interface_path.parents[0].parts) + [message.structure.namespaced_type.name])) & ros_message,
+  size_t current_alignment)
 {
-  size_t current_alignment = initial_alignment;
-  is_unbounded = false;
+  size_t initial_alignment = current_alignment;
+
+  const size_t padding = 4;
+  const size_t wchar_size = 4;
+  (void)padding;
+  (void)wchar_size;
+
 @[for member in message.structure.members]@
-@[  if not member.has_annotation('key')]@
+@[  if not member.has_annotation('key') and message.structure.has_any_member_with_annotation('key')]@
 @[  continue]@
 @[  end if]@
-  // Member: @(member.name)
-  {
-@[    if isinstance(member.type, AbstractNestedType) ]@
-@[    if isinstance(member.type, Array)]@
-    size_t array_size = @(member.type.size);
-@[    elif isinstance(member.type, BoundedSequence)]@
-    size_t array_size = @(member.type.maximum_size);
-@[    else]@
-    size_t array_size = 0;
-@[    end if]@
-@[    if isinstance(member.type, AbstractSequence)]@
-    const size_t padding = 4;
-    current_alignment += padding +
-      eprosima::fastcdr::Cdr::alignment(current_alignment, padding);
-@[    end if]@
-@[  else]@
-    size_t array_size = 1;
-@[  end if]@
+@[  for line in generate_member_for_get_serialized_size(member, '_key')]@
+  @(line)
+@[  end for]@
+
+@[end for]@
+  return current_alignment - initial_alignment;
+}
 
 @{
 type_ = member.type
@@ -651,37 +659,16 @@ _@(message.structure.namespaced_type.name)__cdr_serialize_key(
 
 static
 size_t
-_@(message.structure.namespaced_type.name)__get_serialized_key_size(
+_@(message.structure.namespaced_type.name)__get_serialized_size_key(
   const void * untyped_ros_message,
   size_t initial_alignment)
 {
-  auto ros_message =
+  auto typed_message =
     static_cast<const @('::'.join([package_name] + list(interface_path.parents[0].parts) + [message.structure.namespaced_type.name])) *>(
     untyped_ros_message);
 
-  size_t current_alignment = initial_alignment;
-
-  const size_t padding = 4;
-  const size_t wchar_size = 4;
-  (void)padding;
-  (void)wchar_size;
-
-@[for member in message.structure.members]@
-@[  if not member.has_annotation('key')]@
-@[  continue]@
-@[  end if]@
-  // Member: @(member.name)
-@[  if isinstance(member.type, AbstractNestedType)]@
-  {
-@[    if isinstance(member.type, Array)]@
-    size_t array_size = @(member.type.size);
-@[    else]@
-    size_t array_size = ros_message->@(member.name).size();
-@[      if isinstance(member.type, BoundedSequence)]@
-    if (array_size > @(member.type.maximum_size)) {
-      throw std::runtime_error("array size exceeds upper bound");
-    }
-@[      end if]@
+  return static_cast<uint32_t>(get_serialized_size_key(*typed_message, initial_alignment));
+}
 
     current_alignment += padding +
       eprosima::fastcdr::Cdr::alignment(current_alignment, padding);
