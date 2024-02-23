@@ -845,8 +845,8 @@ _@(message.structure.namespaced_type.name)__max_serialized_size_key(
 static message_type_support_key_callbacks_t __key_callbacks_@(message.structure.namespaced_type.name) = {
   _@(message.structure.namespaced_type.name)__cdr_serialize_key,
   _@(message.structure.namespaced_type.name)__cdr_deserialize_key,
-  _@(message.structure.namespaced_type.name)__get_serialized_key_size,
-  _@(message.structure.namespaced_type.name)__max_serialized_key_size,
+  _@(message.structure.namespaced_type.name)__get_serialized_size_key,
+  _@(message.structure.namespaced_type.name)__max_serialized_size_key,
 };
 @[  end if]@
 
