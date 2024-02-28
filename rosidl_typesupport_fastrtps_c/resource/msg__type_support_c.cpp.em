@@ -136,6 +136,21 @@ for member in message.structure.members:
         forward_declares[key].add(member.name)
 }@
 @[for key in sorted(forward_declares.keys())]@
+
+@[  if key[0] != package_name]@
+ROSIDL_TYPESUPPORT_FASTRTPS_C_IMPORT_@(package_name)
+@[  end if]@
+bool cdr_serialize_@('__'.join(key))(
+  const @('__'.join(key)) * ros_message,
+  eprosima::fastcdr::Cdr & cdr);
+
+@[  if key[0] != package_name]@
+ROSIDL_TYPESUPPORT_FASTRTPS_C_IMPORT_@(package_name)
+@[  end if]@
+bool cdr_deserialize_@('__'.join(key))(
+  eprosima::fastcdr::Cdr & cdr,
+  @('__'.join(key)) * ros_message);
+
 @[  if key[0] != package_name]@
 ROSIDL_TYPESUPPORT_FASTRTPS_C_IMPORT_@(package_name)
 @[  end if]@
@@ -150,6 +165,20 @@ size_t max_serialized_size_@('__'.join(key))(
   bool & full_bounded,
   bool & is_plain,
   size_t current_alignment);
+
+@[  if key[0] != package_name]@
+ROSIDL_TYPESUPPORT_FASTRTPS_C_IMPORT_@(package_name)
+@[  end if]@
+bool cdr_serialize_key_@('__'.join(key))(
+  const @('__'.join(key)) * ros_message,
+  eprosima::fastcdr::Cdr & cdr);
+
+@[  if key[0] != package_name]@
+ROSIDL_TYPESUPPORT_FASTRTPS_C_IMPORT_@(package_name)
+@[  end if]@
+bool cdr_deserialize_key_@('__'.join(key))(
+  eprosima::fastcdr::Cdr & cdr,
+  @('__'.join(key)) * ros_message);
 
 @[  if key[0] != package_name]@
 ROSIDL_TYPESUPPORT_FASTRTPS_C_IMPORT_@(package_name)
@@ -178,6 +207,11 @@ const rosidl_message_type_support_t *
 using _@(message.structure.namespaced_type.name)__ros_msg_type = @('__'.join(message.structure.namespaced_type.namespaced_name()));
 
 @{
+
+# Generates the definition for the serialization family of methods given a structure member
+#   member: the member to serialize
+#   suffix: the suffix name of the method. Will be used in case of recursion
+
 def generate_member_for_cdr_serialize(member, suffix):
   from rosidl_generator_cpp import msg_type_only_to_cpp
   from rosidl_generator_cpp import msg_type_to_cpp
@@ -197,13 +231,6 @@ def generate_member_for_cdr_serialize(member, suffix):
   type_ = member.type
   if isinstance(type_, AbstractNestedType):
     type_ = type_.value_type
-
-  if isinstance(type_, NamespacedType):
-    strlist.append('  const message_type_support_callbacks_t * callbacks =')
-    strlist.append('    static_cast<const message_type_support_callbacks_t *>(')
-    strlist.append('    ROSIDL_TYPESUPPORT_INTERFACE__MESSAGE_SYMBOL_NAME(')
-    strlist.append('      rosidl_typesupport_fastrtps_c, %s' % (', '.join(type_.namespaced_name())))
-    strlist.append('    )()->data);')
 
   if isinstance(member.type, AbstractNestedType):
     if isinstance(member.type, Array):
@@ -248,27 +275,15 @@ def generate_member_for_cdr_serialize(member, suffix):
       strlist.append('  }')
     elif isinstance(member.type.value_type, BasicType) and member.type.value_type.typename == 'wchar':
       strlist.append('  for (size_t i = 0; i < size; ++i) {')
-      if suffix == '':
-        strlist.append('    if (!callbacks->cdr_serialize(')
-      else:
-        strlist.append('    if (!callbacks->%s_callbacks->cdr_serialize%s(' % ((''.join(c for c in suffix if c not in '(){}<>_*')), suffix))
-      strlist.append('        static_cast<wchar_t *>(&array_ptr[i]), cdr))')
-      strlist.append('    {')
-      strlist.append('      return false;')
-      strlist.append('    }')
+      strlist.append('    cdr_serialize%s_%s(' % (suffix, ('__'.join(member.type.value_type.namespaced_name()))))
+      strlist.append('        static_cast<wchar_t *>(&array_ptr[i]), cdr);')
       strlist.append('  }')
     elif isinstance(member.type.value_type, BasicType):
       strlist.append('  cdr.serializeArray(array_ptr, size);')
     else :
       strlist.append('  for (size_t i = 0; i < size; ++i) {')
-      if suffix == '':
-        strlist.append('    if (!callbacks->cdr_serialize(')
-      else:
-        strlist.append('    if (!callbacks->%s_callbacks->cdr_serialize%s(' % ((''.join(c for c in suffix if c not in '(){}<>_*')), suffix))
-      strlist.append('        &array_ptr[i], cdr))')
-      strlist.append('    {')
-      strlist.append('       return false;')
-      strlist.append('    }')
+      strlist.append('    cdr_serialize%s_%s(' % (suffix, ('__'.join(member.type.value_type.namespaced_name()))))
+      strlist.append('        &array_ptr[i], cdr);')
       strlist.append('  }')
   elif isinstance(member.type, AbstractString):
     strlist.append('  const rosidl_runtime_c__String * str = &ros_message->%s;' % (member.name))
@@ -292,28 +307,18 @@ def generate_member_for_cdr_serialize(member, suffix):
   elif isinstance(member.type, BasicType):
     strlist.append('  cdr << ros_message->%s;' % (member.name))
   else:
-    if suffix == '':
-      strlist.append('    if (!callbacks->cdr_serialize(')
-    else:
-      strlist.append('    if (!callbacks->%s_callbacks->cdr_serialize%s(' % ((''.join(c for c in suffix if c not in '(){}<>_*')), suffix))
-    strlist.append('      &ros_message->%s, cdr))' % (member.name))
-    strlist.append('  {')
-    strlist.append('    return false;')
-    strlist.append('  }')
+    strlist.append('    cdr_serialize%s_%s(' % (suffix, ('__'.join(member.type.namespaced_name()))))
+    strlist.append('      &ros_message->%s, cdr);' % (member.name))
   strlist.append('}')
 
   return strlist
 }@
 
-static bool _@(message.structure.namespaced_type.name)__cdr_serialize(
-  const void * untyped_ros_message,
+ROSIDL_TYPESUPPORT_FASTRTPS_C_PUBLIC_@(package_name)
+bool cdr_serialize_@('__'.join([package_name] + list(interface_path.parents[0].parts) + [message.structure.namespaced_type.name]))(
+  const @('__'.join(message.structure.namespaced_type.namespaced_name())) * ros_message,
   eprosima::fastcdr::Cdr & cdr)
 {
-  if (!untyped_ros_message) {
-    fprintf(stderr, "ros message handle is null\n");
-    return false;
-  }
-  const _@(message.structure.namespaced_type.name)__ros_msg_type * ros_message = static_cast<const _@(message.structure.namespaced_type.name)__ros_msg_type *>(untyped_ros_message);
 @[for member in message.structure.members]@
 @[  for line in generate_member_for_cdr_serialize(member, '')]@
   @(line)
@@ -323,15 +328,11 @@ static bool _@(message.structure.namespaced_type.name)__cdr_serialize(
   return true;
 }
 
-static bool _@(message.structure.namespaced_type.name)__cdr_deserialize(
+ROSIDL_TYPESUPPORT_FASTRTPS_C_PUBLIC_@(package_name)
+bool cdr_deserialize_@('__'.join([package_name] + list(interface_path.parents[0].parts) + [message.structure.namespaced_type.name]))(
   eprosima::fastcdr::Cdr & cdr,
-  void * untyped_ros_message)
+  @('__'.join(message.structure.namespaced_type.namespaced_name())) * ros_message)
 {
-  if (!untyped_ros_message) {
-    fprintf(stderr, "ros message handle is null\n");
-    return false;
-  }
-  _@(message.structure.namespaced_type.name)__ros_msg_type * ros_message = static_cast<_@(message.structure.namespaced_type.name)__ros_msg_type *>(untyped_ros_message);
 @[for member in message.structure.members]@
   // Field name: @(member.name)
   {
@@ -340,13 +341,6 @@ type_ = member.type
 if isinstance(type_, AbstractNestedType):
     type_ = type_.value_type
 }@
-@[  if isinstance(type_, NamespacedType)]@
-    const message_type_support_callbacks_t * callbacks =
-      static_cast<const message_type_support_callbacks_t *>(
-      ROSIDL_TYPESUPPORT_INTERFACE__MESSAGE_SYMBOL_NAME(
-        rosidl_typesupport_fastrtps_c, @(', '.join(type_.namespaced_name()))
-      )()->data);
-@[  end if]@
 @[  if isinstance(member.type, AbstractNestedType)]@
 @[    if isinstance(member.type, Array)]@
     size_t size = @(member.type.size);
@@ -427,11 +421,7 @@ else:
     cdr.deserializeArray(array_ptr, size);
 @[    else]@
     for (size_t i = 0; i < size; ++i) {
-      if (!callbacks->cdr_deserialize(
-          cdr, &array_ptr[i]))
-      {
-        return false;
-      }
+      cdr_deserialize_@('__'.join(member.type.value_type.namespaced_name()))(cdr, &array_ptr[i]);
     }
 @[    end if]@
 @[   elif isinstance(member.type, AbstractString)]@
@@ -470,11 +460,7 @@ else:
 @[  elif isinstance(member.type, BasicType)]@
     cdr >> ros_message->@(member.name);
 @[  else]@
-    if (!callbacks->cdr_deserialize(
-        cdr, &ros_message->@(member.name)))
-    {
-      return false;
-    }
+    cdr_deserialize_@('__'.join(member.type.namespaced_name()))(cdr, &ros_message->@(member.name));
 @[  end if]@
   }
 
@@ -483,6 +469,11 @@ else:
 }  // NOLINT(readability/fn_size)
 
 @{
+
+# Generates the definition for the get_serialized_size family of methods given a structure member
+#   member: the member to serialize
+#   suffix: the suffix name of the method. Will be used in case of recursion
+
 def generate_member_for_get_serialized_size(member, suffix):
   from rosidl_generator_cpp import msg_type_only_to_cpp
   from rosidl_generator_cpp import msg_type_to_cpp
@@ -569,6 +560,11 @@ size_t get_serialized_size_@('__'.join([package_name] + list(interface_path.pare
 }
 
 @{
+
+# Generates the definition for the max_serialized_size family of methods given a structure member
+#   member: the member to serialize
+#   suffix: the suffix name of the method. Will be used in case of recursion
+
 def generate_member_for_max_serialized_size(member, suffix):
   from rosidl_generator_cpp import msg_type_only_to_cpp
   from rosidl_generator_cpp import msg_type_to_cpp
@@ -704,20 +700,11 @@ last_member_name_ = member.name
   return ret_val;
 }
 
-@[  if message.structure.has_any_member_with_annotation('key') ]@
-static
-bool
-_@(message.structure.namespaced_type.name)__cdr_serialize_key(
-  const void * untyped_ros_message,
+ROSIDL_TYPESUPPORT_FASTRTPS_C_PUBLIC_@(package_name)
+bool cdr_serialize_key_@('__'.join([package_name] + list(interface_path.parents[0].parts) + [message.structure.namespaced_type.name]))(
+  const @('__'.join(message.structure.namespaced_type.namespaced_name())) * ros_message,
   eprosima::fastcdr::Cdr & cdr)
 {
-  if (!untyped_ros_message) {
-    fprintf(stderr, "ros message handle is null\n");
-    return false;
-  }
-  const _@(message.structure.namespaced_type.name)__ros_msg_type * ros_message = static_cast<const _@(message.structure.namespaced_type.name)__ros_msg_type *>(untyped_ros_message);
-  (void)ros_message;
-
 @[for member in message.structure.members]@
 @[  if not member.has_annotation('key') and message.structure.has_any_member_with_annotation('key')]@
 @[  continue]@
@@ -730,15 +717,16 @@ _@(message.structure.namespaced_type.name)__cdr_serialize_key(
   return true;
 }
 
-static
-bool
-_@(message.structure.namespaced_type.name)__cdr_deserialize_key(
-  eprosima::fastcdr::Cdr &,
-  void *)
+ROSIDL_TYPESUPPORT_FASTRTPS_C_PUBLIC_@(package_name)
+bool cdr_deserialize_key_@('__'.join([package_name] + list(interface_path.parents[0].parts) + [message.structure.namespaced_type.name]))(
+  eprosima::fastcdr::Cdr &cdr,
+  @('__'.join(message.structure.namespaced_type.namespaced_name())) * ros_message)
 {
+  (void)ros_message;
+  (void)cdr;
+  // TODO
   return false;
 }
-@[  end if]@
 
 ROSIDL_TYPESUPPORT_FASTRTPS_C_PUBLIC_@(package_name)
 size_t get_serialized_size_key_@('__'.join([package_name] + list(interface_path.parents[0].parts) + [message.structure.namespaced_type.name]))(
@@ -818,18 +806,42 @@ last_member_name_ = member.name
 }
 
 @[  if message.structure.has_any_member_with_annotation('key') ]@
-static size_t _@(message.structure.namespaced_type.name)__get_serialized_size_key(
+static bool _@(message.structure.namespaced_type.name)__cdr_serialize_key(
   const void * untyped_ros_message,
-  size_t initial_aligment)
+  eprosima::fastcdr::Cdr & cdr)
+{
+  if (!untyped_ros_message) {
+    fprintf(stderr, "ros message handle is null\n");
+    return false;
+  }
+  const @('__'.join(message.structure.namespaced_type.namespaced_name())) * ros_message = static_cast<const @('__'.join(message.structure.namespaced_type.namespaced_name())) *>(untyped_ros_message);
+  (void)ros_message;
+  return cdr_serialize_key_@('__'.join([package_name] + list(interface_path.parents[0].parts) + [message.structure.namespaced_type.name]))(ros_message, cdr);
+}
+
+static bool _@(message.structure.namespaced_type.name)__cdr_deserialize_key(
+  eprosima::fastcdr::Cdr & cdr,
+  void * untyped_ros_message)
+{
+  if (!untyped_ros_message) {
+    fprintf(stderr, "ros message handle is null\n");
+    return false;
+  }
+  @('__'.join(message.structure.namespaced_type.namespaced_name())) * ros_message = static_cast<@('__'.join(message.structure.namespaced_type.namespaced_name())) *>(untyped_ros_message);
+  (void)ros_message;
+  return cdr_deserialize_key_@('__'.join([package_name] + list(interface_path.parents[0].parts) + [message.structure.namespaced_type.name]))(cdr, ros_message);
+}
+
+static size_t _@(message.structure.namespaced_type.name)__get_serialized_size_key(
+  const void * untyped_ros_message)
 {
   return get_serialized_size_key_@('__'.join([package_name] + list(interface_path.parents[0].parts) + [message.structure.namespaced_type.name]))(
-      untyped_ros_message, initial_aligment);
+      untyped_ros_message, 0);
 }
 
 static
 size_t
 _@(message.structure.namespaced_type.name)__max_serialized_size_key(
-  size_t initial_alignment,
   bool & is_unbounded)
 {
   bool full_bounded;
@@ -837,7 +849,7 @@ _@(message.structure.namespaced_type.name)__max_serialized_size_key(
   size_t ret_val;
 
   ret_val = max_serialized_size_key_@('__'.join([package_name] + list(interface_path.parents[0].parts) + [message.structure.namespaced_type.name]))(
-    full_bounded, is_plain, initial_alignment);
+    full_bounded, is_plain, 0);
 
   is_unbounded = !full_bounded;
   return ret_val;
@@ -853,6 +865,32 @@ static message_type_support_key_callbacks_t __key_callbacks_@(message.structure.
 
 @
 @# // Collect the callback functions and provide a function to get the type support struct.
+
+static bool _@(message.structure.namespaced_type.name)__cdr_serialize(
+  const void * untyped_ros_message,
+  eprosima::fastcdr::Cdr & cdr)
+{
+  if (!untyped_ros_message) {
+    fprintf(stderr, "ros message handle is null\n");
+    return false;
+  }
+  const @('__'.join(message.structure.namespaced_type.namespaced_name())) * ros_message = static_cast<const @('__'.join(message.structure.namespaced_type.namespaced_name())) *>(untyped_ros_message);
+  (void)ros_message;
+  return cdr_serialize_@('__'.join([package_name] + list(interface_path.parents[0].parts) + [message.structure.namespaced_type.name]))(ros_message, cdr);
+}
+
+static bool _@(message.structure.namespaced_type.name)__cdr_deserialize(
+  eprosima::fastcdr::Cdr & cdr,
+  void * untyped_ros_message)
+{
+  if (!untyped_ros_message) {
+    fprintf(stderr, "ros message handle is null\n");
+    return false;
+  }
+  @('__'.join(message.structure.namespaced_type.namespaced_name())) * ros_message = static_cast<@('__'.join(message.structure.namespaced_type.namespaced_name())) *>(untyped_ros_message);
+  (void)ros_message;
+  return cdr_deserialize_@('__'.join([package_name] + list(interface_path.parents[0].parts) + [message.structure.namespaced_type.name]))(cdr, ros_message);
+}
 
 static uint32_t _@(message.structure.namespaced_type.name)__get_serialized_size(const void * untyped_ros_message)
 {
