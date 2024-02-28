@@ -50,7 +50,6 @@ header_files = [
 #include "@(header_file)"
 @[end for]@
 
-struct message_type_support_key_callbacks_t;
 @[for ns in message.structure.namespaced_type.namespaces]@
 
 namespace @(ns)

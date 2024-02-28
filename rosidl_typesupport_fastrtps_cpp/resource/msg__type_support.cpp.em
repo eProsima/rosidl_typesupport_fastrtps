@@ -105,6 +105,11 @@ namespace @(ns)
 namespace typesupport_fastrtps_cpp
 {
 @{
+
+# Generates the definition for the serialization family of methods given a structure member
+#   member: the member to serialize
+#   suffix: the suffix name of the method. Will be used in case of recursion
+
 def generate_member_for_cdr_serialize(member, suffix):
   from rosidl_generator_cpp import msg_type_only_to_cpp
   from rosidl_generator_cpp import msg_type_to_cpp
@@ -312,6 +317,11 @@ cdr_deserialize(
 }
 
 @{
+
+# Generates the definition for the get_serialized_size family of methods given a structure member
+#   member: the member to serialize
+#   suffix: the suffix name of the method. Will be used in case of recursion
+
 def generate_member_for_get_serialized_size(member, suffix):
   from rosidl_generator_cpp import msg_type_only_to_cpp
   from rosidl_generator_cpp import msg_type_to_cpp
@@ -401,6 +411,11 @@ get_serialized_size(
 }
 
 @{
+
+# Generates the definition for the max_serialized_size family of methods given a structure member
+#   member: the member to serialize
+#   suffix: the suffix name of the method. Will be used in case of recursion
+
 def generate_member_for_max_serialized_size(member, suffix):
   from rosidl_generator_cpp import msg_type_only_to_cpp
   from rosidl_generator_cpp import msg_type_to_cpp
@@ -561,7 +576,7 @@ cdr_deserialize_key(
 {
   (void)ros_message;
   (void)cdr;
-
+  // TODO
   return false;
 }
 
@@ -669,18 +684,16 @@ _@(message.structure.namespaced_type.name)__cdr_deserialize_key(
 static
 size_t
 _@(message.structure.namespaced_type.name)__get_serialized_size_key(
-  const void * untyped_ros_message,
-  size_t initial_alignment)
+  const void * untyped_ros_message)
 {
   auto typed_message =
     static_cast<const @('::'.join([package_name] + list(interface_path.parents[0].parts) + [message.structure.namespaced_type.name])) *>(
     untyped_ros_message);
 
-  return static_cast<uint32_t>(get_serialized_size_key(*typed_message, initial_alignment));
+  return get_serialized_size_key(*typed_message, 0);
 }
 
 static size_t _@(message.structure.namespaced_type.name)__max_serialized_size_key(
-  size_t current_alignment,
   bool & is_unbounded)
 {
   bool full_bounded = true;
@@ -689,7 +702,7 @@ static size_t _@(message.structure.namespaced_type.name)__max_serialized_size_ke
   size_t ret_val = max_serialized_size_key_@(message.structure.namespaced_type.name)(
     full_bounded,
     is_plain,
-    current_alignment);
+    0);
 
   is_unbounded = !full_bounded;
   return ret_val;

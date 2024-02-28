@@ -29,7 +29,7 @@
 // Holds generated methods related with keys
 typedef struct message_type_support_key_callbacks_t
 {
-  /// Callback function for message serialization
+  /// Callback function for key serialization
   /**
    * \param[in] untyped_ros_message Type erased pointer to message instance.
    * \param [in,out] Serialized FastCDR data object.
@@ -39,10 +39,10 @@ typedef struct message_type_support_key_callbacks_t
     const void * untyped_ros_message,
     eprosima::fastcdr::Cdr & cdr);
 
-  /// Callback function for message deserialization
+  /// Callback function for key deserialization
   /**
    * \param [in] Serialized FastCDR data object.
-   * \param[out] untyped_ros_message Type erased pointer to message instance.
+   * \param [out] untyped_ros_message Type erased pointer to message instance.
    * \return true if deserialization succeeded, false otherwise.
    */
   bool (* cdr_deserialize_key)(
@@ -51,21 +51,19 @@ typedef struct message_type_support_key_callbacks_t
 
   /// Callback function to get size of the key data
   /**
-   * \return The size of the serialized message in bytes.
+   * \param [in] untyped_ros_message Type erased pointer to message instance
+   * \return The size of the serialized key in bytes.
    */
   size_t (* get_serialized_size_key)(
-    const void * untyped_ros_message,
-    size_t initial_alignment);
+    const void * untyped_ros_message);
 
   /// Callback function to determine the maximum size needed for key serialization,
   /// which is used for key type support initialization.
   /**
-   * \param [in] initial_alignment Initial alignment to be incrementally calculated.
    * \param [in,out] is_unbounded Whether the key has any unbounded member.
    * \return The maximum key serialized size, in bytes.
    */
   size_t (* max_serialized_size_key)(
-    size_t initial_aligment,
     bool & is_unbounded);
 
 } message_type_support_key_callbacks_t;
