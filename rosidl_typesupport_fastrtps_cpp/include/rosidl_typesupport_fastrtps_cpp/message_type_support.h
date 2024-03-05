@@ -41,7 +41,7 @@ typedef struct message_type_support_key_callbacks_t
 
   /// Callback function for key deserialization
   /**
-   * \param [in] Serialized FastCDR data object.
+   * \param [in,out] Serialized FastCDR data object.
    * \param [out] untyped_ros_message Type erased pointer to message instance.
    * \return true if deserialization succeeded, false otherwise.
    */
