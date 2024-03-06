@@ -49,6 +49,7 @@ header_files = [
 @[    end if]@
 #include "@(header_file)"
 @[end for]@
+
 @[for ns in message.structure.namespaced_type.namespaces]@
 
 namespace @(ns)
@@ -79,6 +80,31 @@ get_serialized_size(
 size_t
 ROSIDL_TYPESUPPORT_FASTRTPS_CPP_PUBLIC_@(package_name)
 max_serialized_size_@(message.structure.namespaced_type.name)(
+  bool & full_bounded,
+  bool & is_plain,
+  size_t current_alignment);
+
+bool
+ROSIDL_TYPESUPPORT_FASTRTPS_CPP_PUBLIC_@(package_name)
+cdr_serialize_key(
+  const @('::'.join([package_name] + list(interface_path.parents[0].parts) + [message.structure.namespaced_type.name])) & ros_message,
+  eprosima::fastcdr::Cdr &);
+
+bool
+ROSIDL_TYPESUPPORT_FASTRTPS_CPP_PUBLIC_@(package_name)
+cdr_deserialize_key(
+  eprosima::fastcdr::Cdr & cdr,
+  @('::'.join([package_name] + list(interface_path.parents[0].parts) + [message.structure.namespaced_type.name])) & ros_message);
+
+size_t
+ROSIDL_TYPESUPPORT_FASTRTPS_CPP_PUBLIC_@(package_name)
+get_serialized_size_key(
+  const @('::'.join([package_name] + list(interface_path.parents[0].parts) + [message.structure.namespaced_type.name])) & ros_message,
+  size_t current_alignment);
+
+size_t
+ROSIDL_TYPESUPPORT_FASTRTPS_CPP_PUBLIC_@(package_name)
+max_serialized_size_key_@(message.structure.namespaced_type.name)(
   bool & full_bounded,
   bool & is_plain,
   size_t current_alignment);
