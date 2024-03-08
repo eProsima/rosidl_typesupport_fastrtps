@@ -20,4 +20,7 @@ namespace rosidl_typesupport_fastrtps_cpp
 ROSIDL_TYPESUPPORT_FASTRTPS_CPP_EXPORT
 const char * typesupport_identifier = "rosidl_typesupport_fastrtps_cpp";
 
+ROSIDL_TYPESUPPORT_FASTRTPS_CPP_EXPORT
+const char * typesupport_identifier_v2 = "rosidl_typesupport_fastrtps_cpp_v2";
+
 }  // namespace rosidl_typesupport_fastrtps_cpp

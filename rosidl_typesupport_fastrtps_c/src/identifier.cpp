@@ -24,6 +24,9 @@ extern "C"
 const char *
   rosidl_typesupport_fastrtps_c__identifier = "rosidl_typesupport_fastrtps_c";
 
+const char *
+  rosidl_typesupport_fastrtps_c__identifier_v2 = "rosidl_typesupport_fastrtps_c_v2";
+
 #if defined(__cplusplus)
 }
 #endif

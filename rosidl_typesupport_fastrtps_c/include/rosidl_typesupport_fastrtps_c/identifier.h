@@ -26,6 +26,10 @@ extern "C"
 ROSIDL_TYPESUPPORT_FASTRTPS_C_PUBLIC
 extern const char * rosidl_typesupport_fastrtps_c__identifier;
 
+/// String identifier specific to rosidl_typesupport_fastrtps_c_v2
+ROSIDL_TYPESUPPORT_FASTRTPS_C_PUBLIC
+extern const char * rosidl_typesupport_fastrtps_c__identifier_v2;
+
 #if __cplusplus
 }
 #endif
