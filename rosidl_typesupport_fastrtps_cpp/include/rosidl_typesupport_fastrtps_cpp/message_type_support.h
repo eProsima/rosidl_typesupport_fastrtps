@@ -26,6 +26,50 @@
 #define ROSIDL_TYPESUPPORT_FASTRTPS_BOUNDED_TYPE   0x01
 #define ROSIDL_TYPESUPPORT_FASTRTPS_PLAIN_TYPE     0x03
 
+// Holds generated methods related with keys
+typedef struct message_type_support_key_callbacks_t
+{
+  /// Callback function for message serialization
+  /**
+   * \param[in] untyped_ros_message Type erased pointer to message instance.
+   * \param [in,out] Serialized FastCDR data object.
+   * \return true if serialization succeeded, false otherwise.
+   */
+  bool (* cdr_serialize_key)(
+    const void * untyped_ros_message,
+    eprosima::fastcdr::Cdr & cdr);
+
+  /// Callback function for message deserialization
+  /**
+   * \param [in] Serialized FastCDR data object.
+   * \param[out] untyped_ros_message Type erased pointer to message instance.
+   * \return true if deserialization succeeded, false otherwise.
+   */
+  bool (* cdr_deserialize_key)(
+    eprosima::fastcdr::Cdr & cdr,
+    void * untyped_ros_message);
+
+  /// Callback function to get size of the key data
+  /**
+   * \return The size of the serialized message in bytes.
+   */
+  size_t (* get_serialized_key_size)(
+    const void * untyped_ros_message,
+    size_t initial_alignment);
+
+  /// Callback function to determine the maximum size needed for key serialization,
+  /// which is used for key type support initialization.
+  /**
+   * \param [in] initial_alignment Initial alignment to be incrementally calculated.
+   * \param [in,out] is_unbounded Whether the key has any unbounded member.
+   * \return The maximum key serialized size, in bytes.
+   */
+  size_t (* max_serialized_key_size)(
+    size_t initial_aligment,
+    bool & is_unbounded);
+
+} message_type_support_key_callbacks_t;
+
 /// Encapsulates the callbacks for getting properties of this rosidl type.
 /**
  * These callbacks are implemented in the generated sources.
@@ -76,6 +120,16 @@ typedef struct message_type_support_callbacks_t
    * \return The maximum serialized size, in bytes.
    */
   size_t (* max_serialized_size)(char & bounds_info);
+
+  /// Checks whether the type has keys, filling the incoming argument
+  /// with the corresponding callbacks when true.
+  /**
+   * \param [in,out] key_callbacks Associated struct of key callbacks.
+   *                               It is filled only if the type is keyed.
+   * \return True if the type has a key.
+   */
+  bool (* get_key_type_support)(message_type_support_key_callbacks_t * key_callbacks);
+
 } message_type_support_callbacks_t;
 
 #endif  // ROSIDL_TYPESUPPORT_FASTRTPS_CPP__MESSAGE_TYPE_SUPPORT_H_
