@@ -36,16 +36,6 @@ extern "C"
 #endif
 
 ROSIDL_TYPESUPPORT_FASTRTPS_C_PUBLIC_@(package_name)
-bool cdr_serialize_@('__'.join([package_name] + list(interface_path.parents[0].parts) + [message.structure.namespaced_type.name]))(
-  const @('__'.join(message.structure.namespaced_type.namespaced_name())) * ros_message,
-  eprosima::fastcdr::Cdr & cdr);
-
-ROSIDL_TYPESUPPORT_FASTRTPS_C_PUBLIC_@(package_name)
-bool cdr_deserialize_@('__'.join([package_name] + list(interface_path.parents[0].parts) + [message.structure.namespaced_type.name]))(
-  eprosima::fastcdr::Cdr &,
-  @('__'.join(message.structure.namespaced_type.namespaced_name())) * ros_message);
-
-ROSIDL_TYPESUPPORT_FASTRTPS_C_PUBLIC_@(package_name)
 size_t get_serialized_size_@('__'.join([package_name] + list(interface_path.parents[0].parts) + [message.structure.namespaced_type.name]))(
   const void * untyped_ros_message,
   size_t current_alignment);
