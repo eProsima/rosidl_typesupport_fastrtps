@@ -14,34 +14,34 @@
 
 ###############################################################################
 #
-# CMake module for finding eProsima FastRTPS.
+# CMake module for finding eProsima FastDDS.
 #
 # Output variables:
 #
-# - FastRTPS_FOUND: flag indicating if the package was found
-# - FastRTPS_INCLUDE_DIR: Paths to the header files
+# - FastDDS_FOUND: flag indicating if the package was found
+# - FastDDS_INCLUDE_DIR: Paths to the header files
 #
 # Example usage:
 #
-#   find_package(fastrtps_cmake_module REQUIRED)
-#   find_package(FastRTPS MODULE)
-#   # use FastRTPS_* variables
+#   find_package(fastdds_cmake_module REQUIRED)
+#   find_package(FastDDS MODULE)
+#   # use FastDDS_* variables
 #
 ###############################################################################
 
 # lint_cmake: -convention/filename, -package/stdargs
 
-set(FastRTPS_FOUND FALSE)
+set(FastDDS_FOUND FALSE)
 
 find_package(fastcdr REQUIRED CONFIG)
-find_package(fastrtps REQUIRED CONFIG)
+find_package(fastdds REQUIRED CONFIG)
 
 string(REGEX MATCH "^[0-9]+\\.[0-9]+" fastcdr_MAJOR_MINOR_VERSION "${fastcdr_VERSION}")
-string(REGEX MATCH "^[0-9]+\\.[0-9]+" fastrtps_MAJOR_MINOR_VERSION "${fastrtps_VERSION}")
+string(REGEX MATCH "^[0-9]+\\.[0-9]+" fastdds_MAJOR_MINOR_VERSION "${fastdds_VERSION}")
 
-find_path(FastRTPS_INCLUDE_DIR
-  NAMES fastrtps/
-  HINTS "${fastrtps_DIR}/../../../include")
+find_path(FastDDS_INCLUDE_DIR
+  NAMES fastdds/
+  HINTS "${fastdds_DIR}/../../../include")
 
 find_library(FastCDR_LIBRARY_RELEASE
   NAMES fastcdr-${fastcdr_MAJOR_MINOR_VERSION} fastcdr
@@ -68,38 +68,38 @@ else()
   set(FastCDR_LIBRARIES "")
 endif()
 
-find_library(FastRTPS_LIBRARY_RELEASE
-  NAMES fastrtps-${fastrtps_MAJOR_MINOR_VERSION} fastrtps
-  HINTS "${fastrtps_DIR}/../../../lib")
+find_library(FastDDS_LIBRARY_RELEASE
+  NAMES fastdds-${fastdds_MAJOR_MINOR_VERSION} fastdds
+  HINTS "${fastdds_DIR}/../../../lib")
 
-find_library(FastRTPS_LIBRARY_DEBUG
-  NAMES fastrtpsd-${fastrtps_MAJOR_MINOR_VERSION}
-  HINTS "${fastrtps_DIR}/../../../lib")
+find_library(FastDDS_LIBRARY_DEBUG
+  NAMES fastddsd-${fastdds_MAJOR_MINOR_VERSION}
+  HINTS "${fastdds_DIR}/../../../lib")
 
-if(FastRTPS_LIBRARY_RELEASE AND FastRTPS_LIBRARY_DEBUG)
-  set(FastRTPS_LIBRARIES
-    optimized ${FastRTPS_LIBRARY_RELEASE}
-    debug ${FastRTPS_LIBRARY_DEBUG}
+if(FastDDS_LIBRARY_RELEASE AND FastDDS_LIBRARY_DEBUG)
+  set(FastDDS_LIBRARIES
+    optimized ${FastDDS_LIBRARY_RELEASE}
+    debug ${FastDDS_LIBRARY_DEBUG}
     ${FastCDR_LIBRARIES}
   )
-elseif(FastRTPS_LIBRARY_RELEASE)
-  set(FastRTPS_LIBRARIES
-    ${FastRTPS_LIBRARY_RELEASE}
+elseif(FastDDS_LIBRARY_RELEASE)
+  set(FastDDS_LIBRARIES
+    ${FastDDS_LIBRARY_RELEASE}
     ${FastCDR_LIBRARIES}
   )
-elseif(FastRTPS_LIBRARY_DEBUG)
-  set(FastRTPS_LIBRARIES
-    ${FastRTPS_LIBRARY_DEBUG}
+elseif(FastDDS_LIBRARY_DEBUG)
+  set(FastDDS_LIBRARIES
+    ${FastDDS_LIBRARY_DEBUG}
     ${FastCDR_LIBRARIES}
   )
 else()
-  set(FastRTPS_LIBRARIES "")
+  set(FastDDS_LIBRARIES "")
 endif()
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(FastRTPS
-  FOUND_VAR FastRTPS_FOUND
+find_package_handle_standard_args(FastDDS
+  FOUND_VAR FastDDS_FOUND
   REQUIRED_VARS
-    FastRTPS_INCLUDE_DIR
-    FastRTPS_LIBRARIES
+    FastDDS_INCLUDE_DIR
+    FastDDS_LIBRARIES
 )
